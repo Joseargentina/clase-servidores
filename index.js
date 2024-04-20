@@ -1,58 +1,76 @@
 import { createServer } from 'http'
 import { readFile } from 'fs'
 import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { getContentType } from './getContentType.js'
+import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url) // Obtener ruta del archivo actual
-const __dirname = dirname(__filename)// Obtener ruta de la carpeta actual
-const PORT = process.env.PORT || 3000
-
+const __dirname = dirname(__filename) // Obtener ruta de la carpeta actual
+console.log(__dirname)
 const server = createServer((req, res) => {
   const { method, url } = req
   if (method === 'GET') {
-    let filePath
     if (url === '/') {
-      filePath = 'views/home.html'
-    } else if (url === '/login') {
-      filePath = 'views/login.html'
-    } else if (url === '/register') {
-      filePath = 'views/register.html'
-    } else if (url.startsWith('/public/')) {
-      filePath = url.slice(1) // Mantén '/public/' en la URL
-    }
-    if (filePath) {
-      const fullPath = join(__dirname, filePath)
-      readFile(fullPath, (err, content) => {
+      // Servir el archivo home.html desde la carpeta views
+      readFile(join(__dirname, 'views', 'home.html'), (err, data) => {
         if (err) {
-          res.writeHead(404, { 'Content-Type': 'text/plain' })
-          res.end('Archivo no encontrado')
+          res.writeHead(500, { 'Content-Type': 'text/html' })
+          res.end('<h1>Error interno del servidor</h1>')
         } else {
-          res.writeHead(200, { 'Content-Type': getContentType(filePath) })
-          res.end(content)
+          res.writeHead(200, { 'Content-Type': 'text/html' })
+          res.end(data)
+        }
+      })
+    } else if (url === '/login') {
+      // Servir el archivo login.html desde la carpeta views
+      readFile(join(__dirname, 'views', 'login.html'), (err, data) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'text/html' })
+          res.end('<h1>Error interno del servidor</h1>')
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html' })
+          res.end(data)
+        }
+      })
+    } else if (url === '/register') {
+      // Servir el archivo register.html desde la carpeta views
+      readFile(join(__dirname, 'views', 'register.html'), (err, data) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'text/html' })
+          res.end('<h1>Error interno del servidor</h1>')
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html' })
+          res.end(data)
         }
       })
     } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain' })
-      res.end('404 Not Found')
+      // Servir archivos estáticos desde la carpeta public (imagenes y css) { 'Content-Type': getContentType(filePath) }
+      const filePath = join(__dirname, 'public', url)
+      readFile(filePath, (err, data) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'text/html' })
+          res.end('<h1>Error interno del servidor</h1>')
+        } else {
+          res.writeHead(200, { 'Content-Type': getContentType(filePath) })
+          res.end(data)
+        }
+      })
     }
   } else if (method === 'POST') {
     if (url === '/login' || url === '/register') {
       // Redirigir al usuario a la página de inicio con un código de estado 302
-      res.writeHead(302, { 'Content-Type': 'text/plain', location: '/' })
-
-      res.end('Redirigiendo a la pagina de inicio')
+      res.writeHead(302, { location: '/' }) // Redirige al home
+      res.end()
     } else {
       // Enviar respuesta 404 para rutas POST no válidas
-      res.writeHead(404, { 'Content-Type': 'text/plain' })
-
-      res.end('404 Not Found')
+      res.writeHead(404, { 'Content-Type': 'text/html' })
+      res.end('<h1>404 - Page not found</h1>')
     }
-  } else {
-    res.writeHead(405, { 'Content-Type': 'text/plain' })
-    res.end('405 Method Not Allowed')
   }
 })
+
+// Coalescencia Nula ?? Devuelve el primer valor que no sea ni undefined ni null
+const PORT = process.env.PORT ?? 3000
 server.listen(PORT, () => {
-  console.log(`Servidor funcionando en el puerto ${PORT}`)
+  console.log(`Server running on http://127.0.0.1:${PORT}`)
 })
